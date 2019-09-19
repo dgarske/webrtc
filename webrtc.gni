@@ -214,6 +214,7 @@ declare_args() {
   rtc_build_opus = !build_with_mozilla
   rtc_build_ssl = !build_with_mozilla
   rtc_build_usrsctp = !build_with_mozilla
+  rtc_build_wolfssl = false
 
   # Enable libevent task queues on platforms that support it.
   if (is_win || is_mac || is_ios || is_nacl || is_fuchsia ||

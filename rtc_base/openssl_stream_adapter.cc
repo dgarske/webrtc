@@ -10,6 +10,9 @@
 
 #include "rtc_base/openssl_stream_adapter.h"
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
