@@ -15,6 +15,9 @@
 #include "rtc_base/win32.h"  // NOLINT
 #endif                       // WEBRTC_WIN
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <openssl/pem.h>

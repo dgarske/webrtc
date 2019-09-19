@@ -10,6 +10,9 @@
 
 #include "rtc_base/openssl_session_cache.h"
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/ssl.h>
 #include <stdlib.h>
 

@@ -11,6 +11,9 @@
 #ifndef RTC_BASE_OPENSSL_SESSION_CACHE_H_
 #define RTC_BASE_OPENSSL_SESSION_CACHE_H_
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/ossl_typ.h>
 
 #include <map>
@@ -19,7 +22,7 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/ssl_stream_adapter.h"
 
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(HAVE_WOLFSSL)
 typedef struct ssl_session_st SSL_SESSION;
 #endif
 

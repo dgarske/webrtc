@@ -16,9 +16,12 @@
 #include "rtc_base/win32.h"  // NOLINT
 #endif                       // WEBRTC_WIN
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/ssl.h>
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if !defined(HAVE_WOLFSSL) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
 #error OpenSSL is older than 1.1.0, which is the minimum supported version.
 #endif
 

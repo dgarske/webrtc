@@ -10,6 +10,13 @@
 
 #include "rtc_base/openssl_stream_adapter.h"
 
+/* default to enabled */
+#define HAVE_DTLS_SRTP
+
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#undef HAVE_DTLS_SRTP /* wolfSSL does not support DTLS SRTP */
+#endif
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
@@ -37,9 +44,10 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if !defined(HAVE_WOLFSSL) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
 #error "webrtc requires at least OpenSSL version 1.1.0, to support DTLS-SRTP"
 #endif
+
 
 // Defines for the TLS Cipher Suite Map.
 #define DEFINE_CIPHER_ENTRY_SSL3(name) \
@@ -50,6 +58,7 @@
 namespace rtc {
 namespace {
 
+#ifdef HAVE_DTLS_SRTP
 // SRTP cipher suite table. |internal_name| is used to construct a
 // colon-separated profile strings which is needed by
 // SSL_CTX_set_tlsext_use_srtp().
@@ -57,6 +66,7 @@ struct SrtpCipherMapEntry {
   const char* internal_name;
   const int id;
 };
+#endif
 
 // Cipher name table. Maps internal OpenSSL cipher ids to the RFC name.
 struct SslCipherMapEntry {
@@ -64,14 +74,16 @@ struct SslCipherMapEntry {
   const char* rfc_name;
 };
 
+#ifdef HAVE_DTLS_SRTP
 // This isn't elegant, but it's better than an external reference
 constexpr SrtpCipherMapEntry kSrtpCipherMap[] = {
     {"SRTP_AES128_CM_SHA1_80", SRTP_AES128_CM_SHA1_80},
     {"SRTP_AES128_CM_SHA1_32", SRTP_AES128_CM_SHA1_32},
     {"SRTP_AEAD_AES_128_GCM", SRTP_AEAD_AES_128_GCM},
     {"SRTP_AEAD_AES_256_GCM", SRTP_AEAD_AES_256_GCM}};
+#endif
 
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(HAVE_WOLFSSL)
 // The "SSL_CIPHER_standard_name" function is only available in OpenSSL when
 // compiled with tracing, so we need to define the mapping manually here.
 constexpr SslCipherMapEntry kSslCipherMap[] = {
@@ -342,7 +354,7 @@ bool OpenSSLStreamAdapter::SetPeerCertificateDigest(
 }
 
 std::string OpenSSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) || defined(HAVE_WOLFSSL)
   const SSL_CIPHER* ssl_cipher = SSL_get_cipher_by_value(cipher_suite);
   if (!ssl_cipher) {
     return std::string();
@@ -423,6 +435,7 @@ bool OpenSSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
 
 bool OpenSSLStreamAdapter::SetDtlsSrtpCryptoSuites(
     const std::vector<int>& ciphers) {
+#ifdef HAVE_DTLS_SRTP
   if (state_ != SSL_NONE) {
     return false;
   }
@@ -453,16 +466,21 @@ bool OpenSSLStreamAdapter::SetDtlsSrtpCryptoSuites(
 
   srtp_ciphers_ = internal_ciphers;
   return true;
+#else
+  (void)ciphers;
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::GetDtlsSrtpCryptoSuite(int* crypto_suite) {
+#ifdef HAVE_DTLS_SRTP
   RTC_DCHECK(state_ == SSL_CONNECTED);
   if (state_ != SSL_CONNECTED) {
     return false;
   }
 
   const SRTP_PROTECTION_PROFILE* srtp_profile =
-      SSL_get_selected_srtp_profile(ssl_);
+    SSL_get_selected_srtp_profile(ssl_);
 
   if (!srtp_profile) {
     return false;
@@ -471,6 +489,10 @@ bool OpenSSLStreamAdapter::GetDtlsSrtpCryptoSuite(int* crypto_suite) {
   *crypto_suite = srtp_profile->id;
   RTC_DCHECK(!SrtpCryptoSuiteToName(*crypto_suite).empty());
   return true;
+#else
+  (void)crypto_suite;
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::IsTlsConnected() {
@@ -807,7 +829,7 @@ int OpenSSLStreamAdapter::BeginSSL() {
 
   SSL_set_bio(ssl_, bio, bio);  // the SSL object owns the bio now.
   if (ssl_mode_ == SSL_MODE_DTLS) {
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) || defined(HAVE_WOLFSSL)
     DTLSv1_set_initial_timeout_duration(ssl_, dtls_handshake_timeout_ms_);
 #else
     // Enable read-ahead for DTLS so whole packets are read from internal BIO
@@ -1016,12 +1038,14 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   SSL_CTX_set_cipher_list(
       ctx, "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK");
 
+#ifdef HAVE_DTLS_SRTP
   if (!srtp_ciphers_.empty()) {
     if (SSL_CTX_set_tlsext_use_srtp(ctx, srtp_ciphers_.c_str())) {
       SSL_CTX_free(ctx);
       return nullptr;
     }
   }
+#endif
 
   return ctx;
 }
