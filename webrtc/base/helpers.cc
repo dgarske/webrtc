@@ -16,6 +16,9 @@
 #if defined(FEATURE_ENABLE_SSL)
 #include "webrtc/base/sslconfig.h"
 #if defined(SSL_USE_OPENSSL)
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/rand.h>
 #else
 #if defined(WEBRTC_WIN)

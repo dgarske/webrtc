@@ -30,6 +30,7 @@ declare_args() {
   # Used to specify an external OpenSSL include path when not compiling the
   # library that comes with WebRTC (i.e. rtc_build_ssl == 0).
   rtc_ssl_root = ""
+  rtc_build_wolfssl = false
 
   # Selects fixed-point code where possible.
   rtc_prefer_fixed_point = false

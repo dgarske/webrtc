@@ -19,10 +19,19 @@
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/opensslidentity.h"
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#include <openssl/ssl.h>
+#define ssl_st WOLFSSL
+#define ssl_ctx_st WOLFSSL_CTX
+#define ssl_cipher_st WOLFSSL_CIPHER
+#define x509_store_ctx_st WOLFSSL_X509_STORE_CTX
+#else
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 typedef struct ssl_cipher_st SSL_CIPHER;
 typedef struct x509_store_ctx_st X509_STORE_CTX;
+#endif
 
 namespace rtc {
 

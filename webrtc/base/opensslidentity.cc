@@ -17,6 +17,9 @@
 // Must be included first before openssl headers.
 #include "webrtc/base/win32.h"  // NOLINT
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>
@@ -322,7 +325,7 @@ OpenSSLCertificate* OpenSSLCertificate::FromPEMString(
 // and before CleanupSSL.
 bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
     std::string* algorithm) const {
-  int nid = OBJ_obj2nid(x509_->sig_alg->algorithm);
+  int nid = X509_get_signature_nid(x509_);
   switch (nid) {
     case NID_md5WithRSA:
     case NID_md5WithRSAEncryption:

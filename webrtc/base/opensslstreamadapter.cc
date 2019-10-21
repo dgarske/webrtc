@@ -12,11 +12,17 @@
 
 #include "webrtc/base/opensslstreamadapter.h"
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#include <openssl/ssl.h>
+#endif
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
+#ifndef HAVE_WOLFSSL
 #include <openssl/tls1.h>
+#endif
 #include <openssl/x509v3.h>
 #ifndef OPENSSL_IS_BORINGSSL
 #include <openssl/dtls1.h>
@@ -45,7 +51,7 @@ namespace {
 
 namespace rtc {
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10001000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x10001000L) && !defined(HAVE_WOLFSSL)
 #define HAVE_DTLS_SRTP
 #endif
 
@@ -935,7 +941,7 @@ void OpenSSLStreamAdapter::Cleanup(uint8_t alert) {
   if (ssl_) {
     int ret;
 // SSL_send_fatal_alert is only available in BoringSSL.
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) && !defined(HAVE_WOLFSSL)
     if (alert) {
       ret = SSL_send_fatal_alert(ssl_, alert);
       if (ret < 0) {
@@ -949,7 +955,7 @@ void OpenSSLStreamAdapter::Cleanup(uint8_t alert) {
         LOG(LS_WARNING) << "SSL_shutdown failed, error = "
                         << SSL_get_error(ssl_, ret);
       }
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) && !defined(HAVE_WOLFSSL)
     }
 #endif
     SSL_free(ssl_);
@@ -981,7 +987,7 @@ void OpenSSLStreamAdapter::OnMessage(Message* msg) {
 SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   SSL_CTX *ctx = NULL;
 
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL) && !defined(HAVE_WOLFSSL)
     ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ?
         DTLS_method() : TLS_method());
     // Version limiting for BoringSSL will be done below.
@@ -990,6 +996,9 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   switch (ssl_max_version_) {
     case SSL_PROTOCOL_TLS_10:
     case SSL_PROTOCOL_TLS_11:
+    /* If wolfSSL only allow if old TLS v1 is enabled */
+    #if !defined(HAVE_WOLFSSL) || \
+        (defined(HAVE_WOLFSSL) && defined(WOLFSSL_ALLOW_TLSV10))
       // OpenSSL doesn't support setting min/max versions, so we always use
       // (D)TLS 1.0 if a max. version below the max. available is requested.
       if (ssl_mode_ == SSL_MODE_DTLS) {
@@ -1006,6 +1015,7 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
         }
       }
       break;
+    #endif
     case SSL_PROTOCOL_TLS_12:
     default:
       if (ssl_mode_ == SSL_MODE_DTLS) {
@@ -1018,9 +1028,9 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
         }
 #else
         if (role_ == SSL_CLIENT) {
-          method = DTLSv1_client_method();
+          method = DTLSv1_2_client_method();
         } else {
-          method = DTLSv1_server_method();
+          method = DTLSv1_2_server_method();
         }
 #endif
       } else {

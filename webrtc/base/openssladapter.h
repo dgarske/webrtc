@@ -16,9 +16,20 @@
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/ssladapter.h"
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
+#include <openssl/ssl.h>
+
+#ifdef HAVE_WOLFSSL
+#define ssl_st WOLFSSL
+#define ssl_ctx_st WOLFSSL_CTX
+#define x509_store_ctx_st WOLFSSL_X509_STORE_CTX
+#else
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 typedef struct x509_store_ctx_st X509_STORE_CTX;
+#endif
 
 namespace rtc {
 

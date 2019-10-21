@@ -11,6 +11,10 @@
 #ifndef WEBRTC_BASE_OPENSSLIDENTITY_H_
 #define WEBRTC_BASE_OPENSSLIDENTITY_H_
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#include <openssl/ssl.h>
+#endif
 #include <openssl/evp.h>
 #include <openssl/x509.h>
 
@@ -22,7 +26,11 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sslidentity.h"
 
+#ifdef HAVE_WOLFSSL
+#define ssl_ctx_st WOLFSSL_CTX
+#else
 typedef struct ssl_ctx_st SSL_CTX;
+#endif
 
 namespace rtc {
 

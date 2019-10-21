@@ -11,6 +11,9 @@
 #ifndef WEBRTC_BASE_OPENSSLDIGEST_H_
 #define WEBRTC_BASE_OPENSSLDIGEST_H_
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/evp.h>
 
 #include "webrtc/base/messagedigest.h"

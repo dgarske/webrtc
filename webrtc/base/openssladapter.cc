@@ -19,6 +19,9 @@
 // Must be included first before openssl headers.
 #include "webrtc/base/win32.h"  // NOLINT
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
@@ -741,6 +744,13 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
 #endif
 
   bool ok = false;
+#ifdef HAVE_WOLFSSL
+  /* use X509_check_host to verify server name */
+  if (X509_check_host(certificate,
+                      host, strlen(host), 0, NULL) == WOLFSSL_SUCCESS) {
+    ok = true;
+  }
+#else
   int extension_count = X509_get_ext_count(certificate);
   for (int i = 0; i < extension_count; ++i) {
     X509_EXTENSION* extension = X509_get_ext(certificate, i);
@@ -795,6 +805,7 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
     if (ok)
       break;
   }
+#endif /* HAVE_WOLFSSL */
 
   char data[256];
   X509_NAME* subject;
@@ -935,8 +946,14 @@ bool OpenSSLAdapter::ConfigureTrustedRootCertificates(SSL_CTX* ctx) {
 
 SSL_CTX*
 OpenSSLAdapter::SetupSSLContext() {
+#if !defined(HAVE_WOLFSSL) || \
+    (defined(HAVE_WOLFSSL) && defined(WOLFSSL_ALLOW_TLSV10))
   SSL_CTX* ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ?
       DTLSv1_client_method() : TLSv1_client_method());
+#else
+  SSL_CTX* ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ?
+      DTLSv1_2_client_method() : TLSv1_2_client_method());
+#endif
   if (ctx == NULL) {
     unsigned long error = ERR_get_error();  // NOLINT: type used by OpenSSL.
     LOG(LS_WARNING) << "SSL_CTX creation failed: "
