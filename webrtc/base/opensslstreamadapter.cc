@@ -381,9 +381,11 @@ std::string OpenSSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
   if (!ssl_cipher) {
     return std::string();
   }
-  char* cipher_name = SSL_CIPHER_get_rfc_name(ssl_cipher);
+  char* cipher_name = (char*)SSL_CIPHER_get_rfc_name(ssl_cipher);
   std::string rfc_name = std::string(cipher_name);
+  #ifndef HAVE_WOLFSSL
   OPENSSL_free(cipher_name);
+  #endif
   return rfc_name;
 #else
   for (const SslCipherMapEntry* entry = kSslCipherMap; entry->rfc_name;
