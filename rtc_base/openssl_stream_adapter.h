@@ -11,6 +11,9 @@
 #ifndef RTC_BASE_OPENSSL_STREAM_ADAPTER_H_
 #define RTC_BASE_OPENSSL_STREAM_ADAPTER_H_
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/ossl_typ.h>
 #include <stddef.h>
 #include <stdint.h>

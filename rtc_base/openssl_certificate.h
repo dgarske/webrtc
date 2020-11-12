@@ -11,6 +11,10 @@
 #ifndef RTC_BASE_OPENSSL_CERTIFICATE_H_
 #define RTC_BASE_OPENSSL_CERTIFICATE_H_
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#include <openssl/x509.h>
+#endif
 #include <openssl/ossl_typ.h>
 #include <stddef.h>
 #include <stdint.h>

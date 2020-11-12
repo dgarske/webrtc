@@ -10,6 +10,9 @@
 
 #include "rtc_base/helpers.h"
 
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/rand.h>
 
 #include <cstdint>

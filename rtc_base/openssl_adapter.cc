@@ -11,6 +11,10 @@
 #include "rtc_base/openssl_adapter.h"
 
 #include <errno.h>
+
+#ifdef HAVE_WOLFSSL
+#include <wolfssl/options.h>
+#endif
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
