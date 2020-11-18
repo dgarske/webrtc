@@ -108,6 +108,22 @@ sudo make install
 
 In build console: `export LD_LIBRARY_PATH=/opt/glibc-2.14/lib`
 
+## Static Build
+
+```sh
+# wolfSSL
+./configure --enable-opensslall --enable-dtls --enable-static --disable-shared --prefix=/home/dgarske/wolfssl-install
+make
+make install
+
+# WebRTC
+gn clean out/debug
+gn gen out/debug "--args=rtc_build_wolfssl=true rtc_build_ssl=false rtc_ssl_root=\"/home/dgarske/wolfssl-install/include\""
+ninja -C out/debug/ -t clean
+ninja -C out/debug/ protobuf_lite p2p base jsoncpp
+
+```
+
 ## Support
 
 For questions or issue please email support@wolfssl.com
