@@ -15,7 +15,11 @@
 
 #ifdef HAVE_WOLFSSL
 #include <wolfssl/options.h>
-#undef HAVE_DTLS_SRTP /* wolfSSL does not support DTLS SRTP */
+#ifndef WOLFSSL_SRTP
+  /* If wolfSSL is not built with SRTP enabled (--enable-srtp), then disable
+   * it in this code */
+  #undef HAVE_DTLS_SRTP 
+#endif
 #endif
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
@@ -849,6 +853,12 @@ int OpenSSLStreamAdapter::BeginSSL() {
 
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE |
                          SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+
+#ifdef HAVE_WOLFSSL
+  /* call this to keep the handshake key share around for calling 
+   * SSL_export_keying_material */
+  wolfSSL_KeepArrays(ssl_);
+#endif
 
   // Do the connect
   return ContinueSSL();

@@ -7,12 +7,13 @@ Below describes the steps for building WebRTC with wolfSSL.
 Support was added in the following wolfSSL pull requests:
 * ref 57: https://github.com/wolfSSL/wolfssl/pull/2462
 * ref m79: https://github.com/wolfSSL/wolfssl/pull/2585
+* DTLS SRTP: 
 
 ```sh
 git clone https://github.com/wolfSSL/wolfssl.git
 cd wolfssl
 ./autogen.sh
-./configure --enable-opensslall --enable-dtls
+./configure --enable-opensslall --enable-dtls --enable-srtp --enable-keying-material
 make
 make check
 sudo make install
@@ -36,19 +37,19 @@ cd src
 # See releases
 git branch -r
 
-# wolfssl work is baed on m84
+# wolfssl work is based on m84
 git checkout branch-heads/4147
 
 # NOTE: this takes a long time
 gclient sync
 
 # apply patch
-patch -p1 < webrtc_m79.diff
+patch -p1 < webrtc_m84.diff
 OR
 # get wolfssl branch
 git remote add wolf https://github.com/dgarske/webrtc.git
 git fetch wolf
-git checkout wolf_m79
+git checkout wolf_m84
 
 # debug build
 gn clean out/debug
@@ -67,6 +68,7 @@ ninja -C out/release/ protobuf_lite p2p base jsoncpp
 
 ```sh
 cd examples/
+gn clean out/debug
 gn gen out/debug
 ninja -C out/debug/ -t clean
 ninja -C out/debug/
@@ -112,16 +114,15 @@ In build console: `export LD_LIBRARY_PATH=/opt/glibc-2.14/lib`
 
 ```sh
 # wolfSSL
-./configure --enable-opensslall --enable-dtls --enable-static --disable-shared --prefix=/home/dgarske/wolfssl-install
+./configure --enable-opensslall --enable-dtls --enable-srtp --enable-keying-material --enable-static --disable-shared --prefix=/home/`whoami`/wolfssl-install
 make
 make install
 
 # WebRTC
 gn clean out/debug
-gn gen out/debug "--args=rtc_build_wolfssl=true rtc_build_ssl=false rtc_ssl_root=\"/home/dgarske/wolfssl-install/include\""
+gn gen out/debug "--args=rtc_build_wolfssl=true rtc_build_ssl=false rtc_ssl_root=\"/home/`whoami`/wolfssl-install/include\""
 ninja -C out/debug/ -t clean
 ninja -C out/debug/ protobuf_lite p2p base jsoncpp
-
 ```
 
 ## Support
