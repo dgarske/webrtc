@@ -43,9 +43,6 @@ git checkout branch-heads/4147
 # NOTE: this takes a long time
 gclient sync
 
-# apply patch
-patch -p1 < webrtc_m84.diff
-OR
 # get wolfssl branch
 git remote add wolf https://github.com/dgarske/webrtc.git
 git fetch wolf
@@ -72,8 +69,22 @@ gn clean out/debug
 gn gen out/debug
 ninja -C out/debug/ -t clean
 ninja -C out/debug/
+```
 
-# NOTE: Must have webcam, otherwise will get assert in debug mode
+### Unit Tests
+
+```
+./out/debug/peerconnection_unittests
+...
+[==========] 1994 tests from 84 test suites ran. (279776 ms total)
+[  PASSED  ] 1994 tests.
+```
+
+### Peer Test
+
+NOTE: Must have webcam, otherwise might get assert in debug mode
+
+```
 cd out/debug
 ./peerconnection_server &
 ./peerconnection_client
